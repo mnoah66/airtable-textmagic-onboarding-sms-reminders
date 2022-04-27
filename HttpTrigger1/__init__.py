@@ -6,6 +6,7 @@ import azure.functions as func
 from datetime import datetime
 import json
 import pytz
+import os
 
 import requests
 
@@ -13,7 +14,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
     headers = {
-    'Authorization':'Bearer keyyIJU9dU9FkNhhL',
+    'Authorization':os.getenv('AIRTABLETOKEN'),
     'Content-Type':'application/json'
     }
 
@@ -26,7 +27,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     dt_now = datetime.now(pytz.utc)
 
     textmagic_headers = {
-                'x-tm-key':'QuNzygXjeEib7oy4g0TNkh0Ob1YRFf',
+                'x-tm-key': os.getenv('TEXTMAGICTOKEN'),
                 'Content-Type':'application/x-www-form-urlencoded',
                 'x-tm-username':'martinnoah'
             }
@@ -46,25 +47,25 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             msg = f"Welcome to the Arc of Essex County, {first_name}! Just a friendly reminder that you are scheduled for pre-service training on {o_date_friendly}. For any questions, please reach out to the Onboarding Team at (973) 535-1182 ext. 1211 or 1256. "
             payload = {'phones':cell, 'text':msg}
             r = requests.post(textmagic_url, headers=textmagic_headers, data=payload)
-            summary_dict[f"{last_name}, {first_name}"] = [{'cell':cell, 'msg': msg}, {'response':str(r.status_code)}]
+            summary_dict[f"{last_name}, {first_name}"] = {'cell':cell, 'msg': msg, 'response':str(f"{r.status_code}: {r.text}")}
         else:
             # Orientation date is in the past.  Check if the Onboarding Complete? checkbox is entered.
             # Airtable does not send this field if it is empty. So check if it's in fields with a try/except.
             try:
                 oc = i['fields']['Onboarding Complete?']
                 msg = "NOTE: Onboarding is complete and pre-service date is in the past.  The employee should not be in the onboarding view.  Please change their Applicant Stage and/or Primepoint Status."
-                summary_dict[f"{last_name}, {first_name}"] = [{'cell':cell, 'msg': msg}, {'response': 'Not applicable'}]
+                summary_dict[f"{last_name}, {first_name}"] = {'cell':cell, 'msg': msg, 'response': 'Not applicable'}
             except:
                 msg = f"Hello {first_name}, just a friendly reminder you still have outstanding onboarding tasks to complete with The Arc of Essex County before being released to program. For more information, please reach out to the Onboarding Team at (973) 535-1182 ext. 1211 or 1256."    
                 payload = {'phones':cell, 'text':msg}
                 r = requests.post(textmagic_url, headers=textmagic_headers, data=payload)
-                summary_dict[f"{last_name}, {first_name}"] = [{'cell':cell, 'msg': msg}, {'response':str(r.status_code)}]
+                summary_dict[f"{last_name}, {first_name}"] = {'cell':cell, 'msg': msg, 'response':str(f"{r.status_code}: {r.text}")}
     
     print(summary_dict)
     headers = {
         'Content-Type': 'application/json'
     }
-    r = requests.post("https://prod-36.westus.logic.azure.com:443/workflows/3bad323e32384047ae51bd2909ea2b98/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ywgsSqpYOB1OCkJ6SDqffVWXe5Vu-TDOQjchP3uwO8s", headers=headers, json=summary_dict)
+    r = requests.post(os.getenv('SUMMARYWEBHOOK'), headers=headers, json=summary_dict)
     print(r.text)
     return func.HttpResponse(
             f"{msg}",
