@@ -5,3 +5,4 @@
 azure-functions
 requests
 pytz
+python-dateutil
