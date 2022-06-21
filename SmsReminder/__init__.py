@@ -77,7 +77,7 @@ def main(mytimer: func.TimerRequest) -> None:
             if not phone_lookup(cell):
                 summary_dict['records'].append({'name': f"{last_name}, {first_name}", 'cell':cell, 'msg': "[ERROR]:  number is a landline.", 'response':"na"})
                 continue # go to next person
-            msg = f"Welcome to the Arc of Essex County, {first_name}! Just a friendly reminder that you are scheduled for pre-service training on {o_date_friendly}. For any questions, please reach out to the Onboarding Team at (973) 535-1182 ext. 1211 or 1256. "
+            msg = f"Welcome to the Arc of Essex County, {first_name}! Just a friendly reminder that you are scheduled for pre-service training on {o_date_friendly}. For any questions, please reach out to the Onboarding Team at (973) 535-1181 ext. 1211 or 1256. "
             payload = {'phones':cell, 'text':msg}
             # Testing
             # summary_dict['records'].append({'name': f"{last_name}, {first_name}", 'cell':cell, 'msg': msg, 'response':"Testing e.g. 201"})
